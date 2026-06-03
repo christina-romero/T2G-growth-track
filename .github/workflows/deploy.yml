@@ -38,8 +38,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      # enablement: true turns GitHub Pages on automatically on the first run,
+      # so no manual Settings -> Pages toggle is required.
       - name: Configure Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
