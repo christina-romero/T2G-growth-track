@@ -8,6 +8,7 @@ import ReflectionBox from '../components/ReflectionBox'
 import ProgressBar from '../components/ProgressBar'
 import Badge from '../components/Badge'
 import type { RubricCriterion } from '../types'
+import { seededShuffle, hashSeed } from '../utils/shuffle'
 
 export default function FinalCertification() {
   const navigate = useNavigate()
@@ -22,6 +23,16 @@ export default function FinalCertification() {
     [getMoment],
   )
   const allAnswered = answeredCount === finalSimulation.length
+
+  // Varied-but-stable answer order per moment so the Guide-Level option isn't
+  // always last. Computed once (seeded by moment id).
+  const shuffledByMoment = useMemo(
+    () =>
+      Object.fromEntries(
+        finalSimulation.map((m) => [m.id, seededShuffle(m.practice.options, hashSeed(m.id))]),
+      ),
+    [],
+  )
 
   if (!unlocked) {
     return (
@@ -72,6 +83,7 @@ export default function FinalCertification() {
   const moment = finalSimulation[activeIdx]
   const momentProgress = getMoment(moment.id)
   const chosen = moment.practice.options.find((o) => o.id === momentProgress.practiceChoiceId)
+  const momentOptions = shuffledByMoment[moment.id] ?? moment.practice.options
 
   const handleChoose = (optId: string) =>
     updateMoment(moment.id, { practiceChoiceId: optId })
@@ -131,7 +143,7 @@ export default function FinalCertification() {
         <ScenarioCard kicker="The moment" scenario={moment.scenario} />
 
         <div className="options">
-          {moment.practice.options.map((opt) => (
+          {momentOptions.map((opt) => (
             <button
               key={opt.id}
               className={`option ${momentProgress.practiceChoiceId === opt.id ? 'is-chosen' : ''}`}

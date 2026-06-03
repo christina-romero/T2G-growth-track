@@ -7,6 +7,7 @@ import RubricFeedback from '../components/RubricFeedback'
 import ReflectionBox from '../components/ReflectionBox'
 import ProgressBar from '../components/ProgressBar'
 import Badge from '../components/Badge'
+import { seededShuffle } from '../utils/shuffle'
 
 const STEPS = [
   { key: 'hook', label: 'Hook', icon: '🎬' },
@@ -35,6 +36,13 @@ export default function ModulePage() {
 
   const [step, setStep] = useState(0)
   const [choiceId, setChoiceId] = useState<string | undefined>(saved.practiceChoiceId)
+
+  // Present the answer options in a varied-but-stable order so the Guide-Level
+  // choice isn't always last. Seeded by module id -> consistent per module.
+  const tryItOptions = useMemo(
+    () => (module ? seededShuffle(module.practice.options, moduleId * 101 + 17) : []),
+    [module, moduleId],
+  )
 
   if (!module) {
     return (
@@ -187,7 +195,7 @@ export default function ModulePage() {
             <h2 className="stepblock__h">🎯 Try It — make the call</h2>
             <ScenarioCard kicker="The decision" scenario={module.practice.prompt} />
             <div className="options">
-              {module.practice.options.map((opt) => (
+              {tryItOptions.map((opt) => (
                 <button
                   key={opt.id}
                   className={`option ${choiceId === opt.id ? 'is-chosen' : ''}`}
