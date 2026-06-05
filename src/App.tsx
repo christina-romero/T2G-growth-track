@@ -1,37 +1,55 @@
 import { HashRouter, Route, Routes, useParams } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
 import { ProgressProvider } from './context/ProgressContext'
 import Layout from './components/Layout'
+import RequireAuth from './components/RequireAuth'
+import Login from './pages/Login'
 import Home from './pages/Home'
 import CourseMap from './pages/CourseMap'
 import ModulePage from './pages/ModulePage'
 import CertificationProgress from './pages/CertificationProgress'
 import FinalCertification from './pages/FinalCertification'
+import AdminDashboard from './pages/AdminDashboard'
 
-// Keying ModulePage by the module id forces a fresh remount whenever the
-// route param changes, so a new module always starts on the Hook step (and the
-// previous module's selected choice doesn't carry over).
+// Keying ModulePage by the module id forces a fresh remount whenever the route
+// param changes, so a new module always starts on the Hook step.
 function ModuleRoute() {
   const { id } = useParams()
   return <ModulePage key={id} />
 }
 
-// HashRouter is used so the app works when opened from a static host or the
-// file system without server-side route configuration.
-export default function App() {
+// The authenticated app shell: per-user progress provider wrapping the layout.
+function AppShell() {
   return (
     <ProgressProvider>
+      <Layout />
+    </ProgressProvider>
+  )
+}
+
+// HashRouter so routes work on GitHub Pages without server config.
+// AuthProvider is outermost so the login gate and the progress layer can both
+// read the current session. When Supabase isn't configured, RequireAuth lets
+// everyone through (anonymous local mode) and /login redirects to the app.
+export default function App() {
+  return (
+    <AuthProvider>
       <HashRouter>
         <Routes>
-          <Route element={<Layout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/course" element={<CourseMap />} />
-            <Route path="/module/:id" element={<ModuleRoute />} />
-            <Route path="/certification" element={<CertificationProgress />} />
-            <Route path="/final" element={<FinalCertification />} />
-            <Route path="*" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route element={<RequireAuth />}>
+            <Route element={<AppShell />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/course" element={<CourseMap />} />
+              <Route path="/module/:id" element={<ModuleRoute />} />
+              <Route path="/certification" element={<CertificationProgress />} />
+              <Route path="/final" element={<FinalCertification />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="*" element={<Home />} />
+            </Route>
           </Route>
         </Routes>
       </HashRouter>
-    </ProgressProvider>
+    </AuthProvider>
   )
 }

@@ -1,5 +1,6 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useProgress } from '../context/ProgressContext'
+import { useAuth } from '../context/AuthContext'
 
 const NAV = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
@@ -11,6 +12,13 @@ const NAV = [
 /** App shell: header, primary nav, and routed page outlet. */
 export default function Layout() {
   const { percentComplete, certificationLevel } = useProgress()
+  const { configured, user, isAdmin, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    await signOut()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <div className="app">
@@ -35,11 +43,32 @@ export default function Layout() {
               <span>{item.label}</span>
             </NavLink>
           ))}
+          {isAdmin && (
+            <NavLink
+              to="/admin"
+              className={({ isActive }) => `topnav__link ${isActive ? 'is-active' : ''}`}
+            >
+              <span aria-hidden="true">🛡</span>
+              <span>Admin</span>
+            </NavLink>
+          )}
         </nav>
 
         <div className="topbar__status">
-          <span className="topbar__level">{certificationLevel}</span>
-          <span className="topbar__pct">{percentComplete}%</span>
+          <div className="topbar__progress">
+            <span className="topbar__level">{certificationLevel}</span>
+            <span className="topbar__pct">{percentComplete}%</span>
+          </div>
+          {configured && user && (
+            <div className="topbar__user">
+              <span className="topbar__email" title={user.email ?? ''}>
+                {user.email}
+              </span>
+              <button className="topbar__signout" onClick={handleSignOut}>
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
       </header>
 

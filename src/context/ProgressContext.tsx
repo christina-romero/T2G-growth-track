@@ -13,26 +13,20 @@ import type {
   ModuleProgress,
   MomentProgress,
 } from '../types'
-import { TOTAL_UNITS } from '../data/courseContent'
+import { supabase } from '../lib/supabase'
+import { useAuth } from './AuthContext'
+import { computeStats, emptyProgress, normalizeProgress } from '../lib/progressStats'
 
-const STORAGE_KEY = 't2g-growth-track-progress-v1'
+// Anonymous (logged-out / local-mode) progress keeps the original key so any
+// existing per-browser progress is preserved. Signed-in users get a per-user key.
+const ANON_KEY = 't2g-growth-track-progress-v1'
+const userKey = (userId: string | null) =>
+  userId ? `t2g-growth-track-progress-${userId}` : ANON_KEY
 
-const emptyProgress: CourseProgress = {
-  modules: {},
-  finalMoments: {},
-  finalCompleted: false,
-}
-
-function loadProgress(): CourseProgress {
+function loadLocal(key: string): CourseProgress {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return emptyProgress
-    const parsed = JSON.parse(raw) as CourseProgress
-    return {
-      modules: parsed.modules ?? {},
-      finalMoments: parsed.finalMoments ?? {},
-      finalCompleted: parsed.finalCompleted ?? false,
-    }
+    const raw = localStorage.getItem(key)
+    return raw ? normalizeProgress(JSON.parse(raw)) : emptyProgress
   } catch {
     return emptyProgress
   }
@@ -40,37 +34,86 @@ function loadProgress(): CourseProgress {
 
 interface ProgressContextValue {
   progress: CourseProgress
-  // module helpers
   getModule: (id: number) => ModuleProgress
   isModuleCompleted: (id: number) => boolean
   isModuleUnlocked: (id: number) => boolean
   updateModule: (id: number, patch: Partial<ModuleProgress>) => void
   completeModule: (id: number) => void
-  // final helpers
   getMoment: (id: string) => MomentProgress
   updateMoment: (id: string, patch: Partial<MomentProgress>) => void
   completeFinal: () => void
   isFinalUnlocked: () => boolean
-  // derived
   completedCount: number
   percentComplete: number
   certificationLevel: CertificationLevel
   nextModuleId: number | null
   resetProgress: () => void
+  /** true while a signed-in user's cloud progress is still loading. */
+  syncing: boolean
 }
 
 const ProgressContext = createContext<ProgressContextValue | null>(null)
 
 export function ProgressProvider({ children }: { children: ReactNode }) {
-  const [progress, setProgress] = useState<CourseProgress>(loadProgress)
+  const { user } = useAuth()
+  const userId = user?.id ?? null
+  const storageKey = userKey(userId)
 
+  const [progress, setProgress] = useState<CourseProgress>(emptyProgress)
+  // Don't persist until the correct data has been hydrated, so we never
+  // overwrite a user's cloud progress with an empty initial state.
+  const [hydrated, setHydrated] = useState(false)
+
+  // Hydrate whenever the active user changes.
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(progress))
-    } catch {
-      // localStorage may be unavailable (private mode) — fail silently.
+    let active = true
+    setHydrated(false)
+    // Show cached local copy instantly…
+    setProgress(loadLocal(storageKey))
+    if (userId && supabase) {
+      // …then override with the authoritative cloud copy.
+      supabase
+        .from('user_progress')
+        .select('data')
+        .eq('user_id', userId)
+        .maybeSingle()
+        .then(({ data }) => {
+          if (!active) return
+          if (data?.data) setProgress(normalizeProgress(data.data))
+          setHydrated(true)
+        })
+    } else {
+      setHydrated(true)
     }
-  }, [progress])
+    return () => {
+      active = false
+    }
+  }, [userId, storageKey])
+
+  // Persist on change: local cache always; debounced cloud upsert when signed in.
+  useEffect(() => {
+    if (!hydrated) return
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(progress))
+    } catch {
+      // ignore (private mode, quota, etc.)
+    }
+    if (userId && supabase) {
+      const t = setTimeout(() => {
+        supabase!
+          .from('user_progress')
+          .upsert({
+            user_id: userId,
+            data: progress,
+            updated_at: new Date().toISOString(),
+          })
+          .then(({ error }) => {
+            if (error) console.warn('Progress sync failed:', error.message)
+          })
+      }, 600)
+      return () => clearTimeout(t)
+    }
+  }, [progress, hydrated, userId, storageKey])
 
   const getModule = useCallback(
     (id: number): ModuleProgress => progress.modules[id] ?? { completed: false },
@@ -82,25 +125,20 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     [progress.modules],
   )
 
-  // Modules unlock sequentially: module 1 is always open; module N opens once
-  // module N-1 is complete.
   const isModuleUnlocked = useCallback(
     (id: number) => id <= 1 || Boolean(progress.modules[id - 1]?.completed),
     [progress.modules],
   )
 
-  const updateModule = useCallback(
-    (id: number, patch: Partial<ModuleProgress>) => {
-      setProgress((prev) => ({
-        ...prev,
-        modules: {
-          ...prev.modules,
-          [id]: { ...(prev.modules[id] ?? { completed: false }), ...patch },
-        },
-      }))
-    },
-    [],
-  )
+  const updateModule = useCallback((id: number, patch: Partial<ModuleProgress>) => {
+    setProgress((prev) => ({
+      ...prev,
+      modules: {
+        ...prev.modules,
+        [id]: { ...(prev.modules[id] ?? { completed: false }), ...patch },
+      },
+    }))
+  }, [])
 
   const completeModule = useCallback(
     (id: number) => updateModule(id, { completed: true }),
@@ -128,35 +166,18 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
 
   const resetProgress = useCallback(() => setProgress(emptyProgress), [])
 
-  // The 9 content modules count toward unlocking the final task.
-  const completedModuleCount = useMemo(
-    () => Object.values(progress.modules).filter((m) => m?.completed).length,
-    [progress.modules],
-  )
-
-  // Total completed units = 9 content modules + final task.
-  const completedCount = completedModuleCount + (progress.finalCompleted ? 1 : 0)
-
-  const percentComplete = Math.round((completedCount / TOTAL_UNITS) * 100)
+  const stats = useMemo(() => computeStats(progress), [progress])
 
   const isFinalUnlocked = useCallback(
-    () => completedModuleCount >= 9,
-    [completedModuleCount],
+    () => stats.completedModuleCount >= 9,
+    [stats.completedModuleCount],
   )
-
-  const certificationLevel: CertificationLevel = useMemo(() => {
-    if (progress.finalCompleted) return 'Certified Guide'
-    if (percentComplete >= 75) return 'Classroom Ready'
-    if (percentComplete >= 50) return 'Practitioner'
-    if (percentComplete >= 25) return 'Explorer'
-    return 'Guide-in-Training'
-  }, [percentComplete, progress.finalCompleted])
 
   const nextModuleId = useMemo(() => {
     for (let id = 1; id <= 9; id++) {
       if (!progress.modules[id]?.completed) return id
     }
-    return null // all content modules done -> final task
+    return null
   }, [progress.modules])
 
   const value: ProgressContextValue = {
@@ -170,11 +191,12 @@ export function ProgressProvider({ children }: { children: ReactNode }) {
     updateMoment,
     completeFinal,
     isFinalUnlocked,
-    completedCount,
-    percentComplete,
-    certificationLevel,
+    completedCount: stats.completedCount,
+    percentComplete: stats.percent,
+    certificationLevel: stats.level,
     nextModuleId,
     resetProgress,
+    syncing: Boolean(userId) && !hydrated,
   }
 
   return <ProgressContext.Provider value={value}>{children}</ProgressContext.Provider>
