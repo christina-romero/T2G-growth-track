@@ -1,41 +1,11 @@
 // ---------------------------------------------------------------------------
 // Shared types for T2G Growth Track
-// Terminology is sourced from the Access Model Brainlift, the Future 2
-// Operational Playbook, and the Scenarios CSV. Where the source files do not
-// settle a detail, content is labelled "Needs source confirmation".
+// The track is authorship-based: each module builds toward mastery of a Guide
+// competency and ends with an authored artifact saved to the teacher's
+// portfolio (no multiple-choice / compliance scoring).
+// Terminology sourced from the Access Model Brainlift, the Future 2 Playbook,
+// the Scenarios CSV, the T2G Philosophy and the Guide OS for Culture docs.
 // ---------------------------------------------------------------------------
-
-/** The four rubric levels used across every practice activity and the final task. */
-export type RubricLevel = 'Not Yet' | 'Developing' | 'Ready' | 'Guide-Level'
-
-export const RUBRIC_LEVELS: RubricLevel[] = [
-  'Not Yet',
-  'Developing',
-  'Ready',
-  'Guide-Level',
-]
-
-/** A single multiple-choice option in a "Try It" decision task. */
-export interface PracticeOption {
-  id: string
-  text: string
-  /** The rubric level this choice demonstrates. */
-  level: RubricLevel
-  /** Immediate coaching feedback shown after the teacher chooses. */
-  feedback: string
-}
-
-/** A rubric row: one criterion with a descriptor for each level. */
-export interface RubricCriterion {
-  name: string
-  levels: Record<RubricLevel, string>
-}
-
-/** The "Try It" decision task inside a module. */
-export interface PracticeTask {
-  prompt: string
-  options: PracticeOption[]
-}
 
 /** A glossary / key-term pair surfaced inside a module. */
 export interface KeyTerm {
@@ -43,56 +13,87 @@ export interface KeyTerm {
   def: string
 }
 
-/** One full learning module following the Hook -> Certify pattern. */
+/** The Guide competencies the track builds toward. */
+export type Competency =
+  | 'Curate environments'
+  | 'Facilitate student-led Experiences'
+  | 'Coach students through stuck points'
+  | 'Develop motivational models'
+  | 'Make data-informed decisions'
+  | 'Get to know students better than anyone'
+  | 'Provide emotional support to individuals'
+  | 'Structure earned autonomy'
+  | 'Uphold student-created systems'
+  | 'Plan events with lasting impact'
+
+/** The authored-artifact task that closes each module. */
+export interface ArtifactTask {
+  /** Label for the work product the teacher names/titles. */
+  title: string
+  /** What the teacher authors (kept short). */
+  prompt: string
+  /** Optional short guiding bullets to spark the work. */
+  starters?: string[]
+  /** What a strong artifact contains — guidance, not a score. */
+  strongLooksLike: string[]
+  /** Label for the optional link field. */
+  linkLabel?: string
+  placeholder?: string
+}
+
+/** One learning module: Hook -> Learn -> See It -> Build -> Reflect. */
 export interface Module {
   id: number
   title: string
   estimatedTime: string
+  /** The Guide competency this module builds toward. */
+  competency: Competency
   learningGoal: string
-  /** 1. Hook — a realistic classroom scenario. */
+  /** Hook — a realistic classroom moment (one short paragraph). */
   scenario: string
-  /** 2. Learn — short explanation of the core skill (paragraphs). */
-  lesson: string[]
-  /** 3. See It — what strong Guide execution looks like (paragraphs). */
-  example: string[]
-  /** 4. Try It — a decision/analysis task. */
-  practice: PracticeTask
-  /** 5. Get Feedback — the rubric used to score the practice task. */
-  rubric: RubricCriterion[]
-  /** 6. Reflect — "What would you do differently tomorrow?" variant. */
+  /** Learn — a few short bullets (one idea each). */
+  lessonPoints: string[]
+  /** See It — one short line of strong Guide execution. */
+  example: string
+  /** Build — the authored artifact for the portfolio. */
+  artifact: ArtifactTask
+  /** Reflect — "what would you do differently tomorrow?" */
   reflectionPrompt: string
-  /** 7. Certify — a short performance task that closes the module. */
-  certifyTask: string
   nonNegotiables?: string[]
   keyTerms?: KeyTerm[]
 }
 
-/** One moment in the Final Guide Certification simulation. */
+/** One moment in the Final Guide Certification capstone. */
 export interface SimulationMoment {
   id: string
   label: string
+  competency: Competency
   scenario: string
-  practice: PracticeTask
+  /** What the teacher authors in response. */
+  artifactPrompt: string
+  strongLooksLike: string[]
   reflectionPrompt: string
 }
 
 // ---------------------------------------------------------------------------
-// Progress (persisted to localStorage)
+// Progress + portfolio (persisted to localStorage / cloud)
 // ---------------------------------------------------------------------------
 
+/** A saved authored artifact. */
+export interface Artifact {
+  text: string
+  link?: string
+  updatedAt?: string
+}
+
 export interface ModuleProgress {
-  /** Whether the teacher has pressed "Complete Module". */
   completed: boolean
-  /** The option id chosen in the Try It task. */
-  practiceChoiceId?: string
-  /** Free-text reflection ("differently tomorrow"). */
+  artifact?: Artifact
   reflection?: string
-  /** Free-text certify performance-task response. */
-  certifyResponse?: string
 }
 
 export interface MomentProgress {
-  practiceChoiceId?: string
+  artifact?: Artifact
   reflection?: string
 }
 

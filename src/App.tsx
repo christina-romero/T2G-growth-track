@@ -11,6 +11,7 @@ import CertificationProgress from './pages/CertificationProgress'
 import FinalCertification from './pages/FinalCertification'
 import AdminDashboard from './pages/AdminDashboard'
 import Foundations from './pages/Foundations'
+import Portfolio from './pages/Portfolio'
 
 // Keying ModulePage by the module id forces a fresh remount whenever the route
 // param changes, so a new module always starts on the Hook step.
@@ -44,6 +45,7 @@ export default function App() {
               <Route path="/foundations" element={<Foundations />} />
               <Route path="/course" element={<CourseMap />} />
               <Route path="/module/:id" element={<ModuleRoute />} />
+              <Route path="/portfolio" element={<Portfolio />} />
               <Route path="/certification" element={<CertificationProgress />} />
               <Route path="/final" element={<FinalCertification />} />
               <Route path="/admin" element={<AdminDashboard />} />

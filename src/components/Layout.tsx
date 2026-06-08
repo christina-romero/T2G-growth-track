@@ -6,6 +6,7 @@ const NAV = [
   { to: '/', label: 'Dashboard', icon: '🏠', end: true },
   { to: '/foundations', label: 'Foundations', icon: '🌱' },
   { to: '/course', label: 'Course Map', icon: '🗺' },
+  { to: '/portfolio', label: 'Portfolio', icon: '📁' },
   { to: '/certification', label: 'Certification', icon: '🏅' },
   { to: '/final', label: 'Final Task', icon: '★' },
 ]
