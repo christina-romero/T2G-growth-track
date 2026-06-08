@@ -301,6 +301,7 @@ export const modules: Module[] = [
       'The load-bearing principle is "Belonging Comes From Contribution." The way to matter in this school is to add something to it. That is the antidote to chronic disengagement: belonging through usefulness instead of belonging through compliance.',
       'Harm is handled with repair protocols, not punishment-as-control. The CSV is explicit about scale: individual harm requires individual repair; group harm requires group repair; property damage requires restitution and a repair plan; exclusion is restored through a repair action that rebuilds belonging.',
       'Culture is student-owned. The Guide protects the conditions; students do the culture work. Recognition names specific behavior tied to the Impact Skills rather than praising in the abstract — "effort is named by behavior rather than praised."',
+      'This module runs on the Guide OS for Culture (see Foundations): students sign their Community Standards, Guides read the room as sheep, shepherds, and wolf-pattern behavior, and catch destabilization early on the intervention ladder — Drift → Testing → Recruiting → Predation. Consequences protect the space and restore responsibility; they are not a warning ladder. And in the Access Model, academic and behavioral standards are synonymous — both show whether a student is participating as a capable, responsible contributor.',
     ],
     example: [
       'A strong Guide does not simply order the student to "let them play." They name the harm, require a repair action that restores belonging (the student finds a real role for the excluded peer and follows through), and tie the reset to contribution.',
@@ -368,11 +369,16 @@ export const modules: Module[] = [
       'Individual harm -> individual repair; group harm -> group repair.',
       'The Guide protects the conditions; students do the culture work.',
       'Recognition is specific and contribution-based, not abstract praise.',
+      'Standards are signed by students; removal always ends in repair before re-entry.',
     ],
     keyTerms: [
       {
         term: 'Town Hall',
         def: 'The weekly student-led meeting where students shape and maintain culture. A student facilitator runs the room; adults are present but minimally intervene.',
+      },
+      {
+        term: 'Intervention ladder',
+        def: 'The Culture System\'s early-warning sequence for destabilization: Drift -> Testing -> Recruiting -> Predation. The earlier a Guide acts, the lighter the response needed. (See Foundations.)',
       },
     ],
   },

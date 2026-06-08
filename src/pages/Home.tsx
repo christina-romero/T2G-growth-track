@@ -5,6 +5,7 @@ import DashboardCard from '../components/DashboardCard'
 import ProgressBar from '../components/ProgressBar'
 import Badge from '../components/Badge'
 import CertificationStatus from '../components/CertificationStatus'
+import { northStar } from '../data/t2gPhilosophy'
 
 export default function Home() {
   const navigate = useNavigate()
@@ -56,6 +57,19 @@ export default function Home() {
             compact
           />
         </div>
+      </section>
+
+      <section className="foundations-banner">
+        <div className="foundations-banner__text">
+          <span className="foundations-banner__kicker">🌱 What this whole track is built on</span>
+          <p className="foundations-banner__quote">"{northStar}"</p>
+          <p className="foundations-banner__sub">
+            The Teacher-to-Guide philosophy and the Culture System are the context for every module.
+          </p>
+        </div>
+        <Link to="/foundations" className="btn">
+          Explore the Foundations →
+        </Link>
       </section>
 
       <section className="dashgrid">
