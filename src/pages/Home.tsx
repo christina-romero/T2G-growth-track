@@ -5,6 +5,7 @@ import DashboardCard from '../components/DashboardCard'
 import ProgressBar from '../components/ProgressBar'
 import Badge from '../components/Badge'
 import CertificationStatus from '../components/CertificationStatus'
+import ResetProgress from '../components/ResetProgress'
 import { northStar } from '../data/t2gPhilosophy'
 
 export default function Home() {
@@ -165,6 +166,11 @@ export default function Home() {
       <p className="home__maplink">
         Prefer the full picture? <Link to="/course">Open the Course Map →</Link>
       </p>
+
+      <div className="home__reset">
+        <span className="home__reset-label">Want a clean slate?</span>
+        <ResetProgress />
+      </div>
     </div>
   )
 }

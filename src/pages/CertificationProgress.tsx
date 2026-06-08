@@ -4,6 +4,7 @@ import { modules } from '../data/courseContent'
 import CertificationStatus from '../components/CertificationStatus'
 import ProgressBar from '../components/ProgressBar'
 import Badge from '../components/Badge'
+import ResetProgress from '../components/ResetProgress'
 
 export default function CertificationProgress() {
   const {
@@ -12,7 +13,6 @@ export default function CertificationProgress() {
     progress,
     isModuleCompleted,
     getModule,
-    resetProgress,
   } = useProgress()
 
   const reflections = modules
@@ -98,20 +98,7 @@ export default function CertificationProgress() {
       )}
 
       <section className="resetrow">
-        <button
-          className="btn btn--ghost"
-          onClick={() => {
-            if (
-              window.confirm(
-                'Reset all progress and reflections on this device? This cannot be undone.',
-              )
-            ) {
-              resetProgress()
-            }
-          }}
-        >
-          Reset my progress
-        </button>
+        <ResetProgress label="Reset my progress" />
       </section>
     </div>
   )
